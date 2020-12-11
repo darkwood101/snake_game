@@ -8,22 +8,66 @@ Snake::Snake() {
 	}
 }
 
-void Snake::draw() {
+/*void Snake::draw() {
 	for (unsigned i = 0; i != snake_pos_.size() - 1; ++i) {
 		mvprintw(snake_pos_[i].first, snake_pos_[i].second, this->body_char_);
 	}
 	unsigned last_pos = snake_pos_.size() -1;
 	mvprintw(snake_pos_[last_pos].first, snake_pos_[last_pos].second, this->head_char_);
-}
+	refresh();
+}*/
 
 
-bool Snake::is_in_snake(unsigned y, unsigned x) {
-	std::pair<unsigned, unsigned> given_coords = std::make_pair(y, x);
+bool Snake::is_in_snake(std::pair<unsigned, unsigned> coords) {
 	for (unsigned i = 0; i != this->snake_pos_.size(); ++i) {
-		if (given_coords == this->snake_pos_[i]) {
+		if (coords == this->snake_pos_[i]) {
 			return true;
 		}
 	}
 
 	return false;
+}
+
+
+bool Snake::is_snake_head(std::pair<unsigned, unsigned> coords) {
+	return coords == this->snake_pos_[this->snake_pos_.size() - 1];
+}
+
+void Snake::move() {
+
+	unsigned head_y = this->snake_pos_[snake_pos_.size() - 1].first;
+	unsigned head_x = this->snake_pos_[snake_pos_.size() - 1].second;
+
+	this->direction_mutex.lock();
+	switch (this->direction) {
+		case up: {
+			--head_y;
+			break;
+		}
+
+		case down: {
+			++head_y;
+			break;
+		}
+
+		case left: {
+			--head_x;
+			break;
+		}
+
+		case right: {
+			++head_x;
+			break;
+		}
+	}
+
+	this->snake_pos_.push_back(std::make_pair(head_y, head_x));
+	this->snake_pos_.erase(this->snake_pos_.begin());
+	this->direction_mutex.unlock();
+}
+
+void Snake::set_direction(int dir) {
+	if (dir == up || dir == down || dir == left || dir == right) {
+		this->direction = dir;
+	}
 }

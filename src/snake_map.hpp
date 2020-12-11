@@ -33,6 +33,9 @@ public:
 	void set(unsigned y, unsigned x, const char* type);
 	void generate_food();
 	bool is_blank(std::pair<unsigned, unsigned> coords);
+	void input_thread();
+	void wait_input();
+	void move_snake();
 };
 
 
