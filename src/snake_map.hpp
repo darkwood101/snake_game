@@ -4,12 +4,12 @@
 #include "constants.hpp"
 
 class SnakeMap {
-	private:
-		char map_array[constants::map_height][constants::map_width];
 
-	public:
-		void print();
-		void initialize();
+private:
+	const char* map_char_ = "o";
+
+public:
+	void draw();
 };
 
 

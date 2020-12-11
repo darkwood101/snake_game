@@ -8,8 +8,7 @@
 int main() {
 	initscr();
 	SnakeMap snake_map;
-	snake_map.initialize();
-	snake_map.print();
+	snake_map.draw();
 	Snake snake;
 	snake.initialize();
 	snake.draw();
