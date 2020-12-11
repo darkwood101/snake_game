@@ -61,12 +61,16 @@ void Snake::move() {
 		}
 	}
 
-	this->snake_pos_.push_back(std::make_pair(head_y, head_x));
+	std::pair<unsigned, unsigned> new_pair = std::make_pair(head_y, head_x);
+	this->snake_pos_.push_back(new_pair);
 	this->snake_pos_.erase(this->snake_pos_.begin());
 	this->direction_mutex.unlock();
 }
 
 void Snake::set_direction(int dir) {
+	if (dir + this->direction == 3) {
+		return;
+	}
 	if (dir == up || dir == down || dir == left || dir == right) {
 		this->direction = dir;
 	}

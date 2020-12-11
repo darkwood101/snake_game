@@ -21,7 +21,7 @@ int main() {
 	while (true) {
 		//snake_map.generate_food()
 		snake_map.move_snake();
-		usleep(500000);
+		usleep(200000);
 	}
 	endwin();
 	return 0;

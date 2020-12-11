@@ -27,9 +27,9 @@ public:
 	void move();
 	void set_direction(int dir);	
 	static constexpr int up = 0;
-	static constexpr int down = 1;
-	static constexpr int left = 2;
-	static constexpr int right = 3;
+	static constexpr int down = 3;
+	static constexpr int left = 1;
+	static constexpr int right = 2;
 	std::mutex direction_mutex;
 };
 
