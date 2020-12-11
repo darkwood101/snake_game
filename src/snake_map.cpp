@@ -9,35 +9,18 @@
 SnakeMap::SnakeMap(Snake* snake, Food* food) {
 	this->snake_ = snake;
 	this->food_ = food;
-	this->types_ = new const char*[this->num_types_];
-	this->types_[this->border_type_] = this->border_char_;
-	this->types_[this->blank_type_] = this->blank_char_;
-	this->types_[this->food_type_] = this->food_char_;
-	this->types_[this->snake_type_] = this->snake_char_;
-
-	for (unsigned y = 0; y != constants::map_height; ++y) {
-		for (unsigned x = 0; x != constants::map_width; ++x) {
-			if (x == 0 || x == constants::map_width - 1 || y == 0 || y == constants::map_height - 1) {
-				this->map_array_[y][x] = this->border_type_;
-			}
-			else {
-				this->map_array_[y][x] = this->blank_type_;
-			}
-		}
-	}
+	this->game_over = false;
 }
 
 void SnakeMap::draw() {
 	for (unsigned y = 0; y != constants::map_height; ++y) {
 		for (unsigned x = 0; x != constants::map_width; ++x) {
 			std::pair<unsigned, unsigned> coords = std::make_pair(y, x);
-			if (this->snake_->is_in_snake(coords)) {
-				if (this->snake_->is_snake_head(coords)) {
-					mvprintw(y, x, this->snake_head_);
-				}
-				else {
+			if (this->snake_->is_snake_head(coords)) {
+				mvprintw(y, x, this->snake_head_);
+			}
+			else if (this->snake_->is_in_snake(coords)) {
 					mvprintw(y, x, this->snake_char_);
-				}
 			}
 			else if (coords == this->food_->get_food_pos()) {
 				mvprintw(y, x, this->food_char_);
@@ -75,7 +58,7 @@ void SnakeMap::generate_food() {
 bool SnakeMap::is_blank(std::pair<unsigned, unsigned> coords) {
 	unsigned y = coords.first;
 	unsigned x = coords.second;
-	return !(x == 0 || x == constants::map_width - 1 || y == 0 || y == constants::map_height - 1 || this->snake_->is_in_snake(coords));
+	return !((x == 0) || (x == constants::map_width - 1) || (y == 0) || (y == constants::map_height - 1) || (this->snake_->is_in_snake(coords)));
 }
 
 
@@ -83,6 +66,10 @@ void SnakeMap::input_thread() {
 	
 	while (true) {
 		char ch = getch();
+		if (this->game_over) {
+			endwin();
+			exit(0);
+		}
 		this->snake_->direction_mutex.lock();
 		switch(ch) {
 			case 'w': {
@@ -111,7 +98,16 @@ void SnakeMap::wait_input() {
 	th.detach();
 }
 
-void SnakeMap::move_snake() {
+int SnakeMap::move_snake() {
 	this->snake_->move();
+	if (this->is_dead()) {
+		this->game_over = true;
+		return -1;
+	}
 	this->draw();
+	return 0;
+}
+
+bool SnakeMap::is_dead() {
+	return !(this->is_blank(this->snake_->get_head()));
 }

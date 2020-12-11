@@ -25,7 +25,8 @@ public:
 	bool is_in_snake(std::pair<unsigned, unsigned> coords);
 	bool is_snake_head(std::pair<unsigned, unsigned> coords);
 	void move();
-	void set_direction(int dir);	
+	void set_direction(int dir);
+	std::pair<unsigned, unsigned> get_head();	
 	static constexpr int up = 0;
 	static constexpr int down = 3;
 	static constexpr int left = 1;

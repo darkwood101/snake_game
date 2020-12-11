@@ -19,8 +19,13 @@ int main() {
 	snake_map.wait_input();
 	snake_map.draw();
 	while (true) {
-		//snake_map.generate_food()
-		snake_map.move_snake();
+		if (snake_map.move_snake() < 0) {
+			mvprintw(constants::map_height, 0, "GAME OVER \n Press any key to exit...");
+			refresh();
+			getch();
+			endwin();
+			exit(0);
+		}
 		usleep(200000);
 	}
 	endwin();

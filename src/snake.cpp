@@ -6,6 +6,9 @@ Snake::Snake() {
 	for (unsigned i = 0; i != this->init_length_; ++i) {
 		snake_pos_.push_back(std::make_pair(this->init_y_, this->init_x_ + i));
 	}
+
+	this->head_ = this->snake_pos_[this->snake_pos_.size() - 1];
+	this->tail_ = this->snake_pos_[0];
 }
 
 /*void Snake::draw() {
@@ -19,7 +22,7 @@ Snake::Snake() {
 
 
 bool Snake::is_in_snake(std::pair<unsigned, unsigned> coords) {
-	for (unsigned i = 0; i != this->snake_pos_.size(); ++i) {
+	for (unsigned i = 0; i != this->snake_pos_.size() - 1; ++i) {
 		if (coords == this->snake_pos_[i]) {
 			return true;
 		}
@@ -62,8 +65,10 @@ void Snake::move() {
 	}
 
 	std::pair<unsigned, unsigned> new_pair = std::make_pair(head_y, head_x);
+	this->head_ = new_pair;
 	this->snake_pos_.push_back(new_pair);
 	this->snake_pos_.erase(this->snake_pos_.begin());
+	this->tail_ = this->snake_pos_[0];
 	this->direction_mutex.unlock();
 }
 
@@ -74,4 +79,9 @@ void Snake::set_direction(int dir) {
 	if (dir == up || dir == down || dir == left || dir == right) {
 		this->direction = dir;
 	}
+}
+
+
+std::pair<unsigned, unsigned> Snake::get_head() {
+	return this->snake_pos_[this->snake_pos_.size() - 1];
 }
