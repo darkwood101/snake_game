@@ -127,7 +127,6 @@ void Game::input_thread() {
             }
             ch = getch();
         }
-        snake_->direction_mutex.lock();
         switch(ch) {
             case 'w': {
                 snake_->set_direction(snake_->up);
@@ -145,8 +144,6 @@ void Game::input_thread() {
                 snake_->set_direction(snake_->right);
             }
         }
-
-        snake_->direction_mutex.unlock();
     }
 }
 

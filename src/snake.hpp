@@ -13,6 +13,7 @@ private:
     unsigned init_y_;                                                   // Initial y coordinate of the snake tail.
     unsigned init_x_;                                                   // Initial x coordinate of the snake tail.
     int direction = right;                                              // Initial direction of the snake.
+    std::vector<int> new_directions;
     std::pair<unsigned, unsigned> head_;                                // Stores coordinates of the head.
     std::pair<unsigned, unsigned> tail_;                                // Stores coordinates of the tail.
 
