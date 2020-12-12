@@ -17,6 +17,7 @@ int main() {
 	Food food;
 	SnakeMap snake_map(&snake, &food);
 	snake_map.wait_input();
+	snake_map.generate_food();
 	snake_map.draw();
 	while (true) {
 		if (snake_map.move_snake() < 0) {

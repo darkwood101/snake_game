@@ -99,7 +99,11 @@ void SnakeMap::wait_input() {
 }
 
 int SnakeMap::move_snake() {
-	this->snake_->move();
+	bool grow = this->ate_food();
+	this->snake_->move(grow);
+	if (grow) {
+		this->generate_food();
+	}
 	if (this->is_dead()) {
 		this->game_over = true;
 		return -1;
@@ -110,4 +114,8 @@ int SnakeMap::move_snake() {
 
 bool SnakeMap::is_dead() {
 	return !(this->is_blank(this->snake_->get_head()));
+}
+
+bool SnakeMap::ate_food() {
+	return (this->snake_->get_head() == this->food_->get_food_pos());
 }

@@ -36,7 +36,7 @@ bool Snake::is_snake_head(std::pair<unsigned, unsigned> coords) {
 	return coords == this->snake_pos_[this->snake_pos_.size() - 1];
 }
 
-void Snake::move() {
+void Snake::move(bool grow) {
 
 	unsigned head_y = this->snake_pos_[snake_pos_.size() - 1].first;
 	unsigned head_x = this->snake_pos_[snake_pos_.size() - 1].second;
@@ -67,7 +67,9 @@ void Snake::move() {
 	std::pair<unsigned, unsigned> new_pair = std::make_pair(head_y, head_x);
 	this->head_ = new_pair;
 	this->snake_pos_.push_back(new_pair);
-	this->snake_pos_.erase(this->snake_pos_.begin());
+	if (!grow) {
+		this->snake_pos_.erase(this->snake_pos_.begin());
+	}
 	this->tail_ = this->snake_pos_[0];
 	this->direction_mutex.unlock();
 }
