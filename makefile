@@ -12,18 +12,24 @@ OBJ=$(SRC:$(SRC_DIR)/%.cpp=$(OBJ_DIR)/%.o)
 all: $(TARGET)
 
 $(TARGET): $(OBJ)
-	$(CC) $^ $(LFLAGS) -o $@
-	@echo Compilation successful!
+	@$(CC) $^ $(LFLAGS) -o $@
+	@echo LINKING: $(TARGET)
+	@echo
+	@echo Build successful!
 
 $(OBJ_DIR)/%.o: $(SRC_DIR)/%.cpp | $(OBJ_DIR)
-	$(CC) $(CFLAGS) -c $< -o $@
+	@$(CC) $(CFLAGS) -c $< -o $@
+	@echo COMPILING: $@
 
 $(OBJ_DIR):
-	mkdir -p $@
+	@mkdir -p $@
 
 clean:
-	rm -rv $(OBJ_DIR)
-	rm -v $(TARGET)
+	@$(RM) -r $(OBJ_DIR)
+	@$(RM) snake_game
+	@echo CLEAN
 
 .PHONY: all clean
+
+-include $(OBJ:.o=.d)
 
