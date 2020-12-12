@@ -20,7 +20,7 @@ int main() {
 	snake_map.draw();
 	while (true) {
 		if (snake_map.move_snake() < 0) {
-			mvprintw(constants::map_height, 0, "GAME OVER \n Press any key to exit...");
+			mvprintw(constants::map_height, 0, "GAME OVER \nPress any key to exit...");
 			refresh();
 			getch();
 			endwin();
