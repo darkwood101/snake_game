@@ -1,16 +1,14 @@
-
 CC=g++
 
 TARGET=snake_game
-LIBS=-lncurses -lpthread
+LIBS=-lncurses -lpthread -fsanitize=address
 
 SRC_DIR=src
 SRC=$(wildcard $(SRC_DIR)/*.cpp)
-CFLAGS=-std=gnu++1z -g -W -O2 -Wall -Wshadow
+CFLAGS= -g -W -O2 -Wall -Wshadow
 
 OBJ_DIR=obj
 OBJ=$(SRC:$(SRC_DIR)/%.cpp=$(OBJ_DIR)/%.o)
-
 
 DEP_DIR=.deps
 DEPFLAGS= -MMD -MF $(DEP_DIR)/$*.d -MP
@@ -42,9 +40,8 @@ clean:
 	@echo CLEANING: executable files
 	@$(RM) snake_game
 	@echo
-	@echo CLEAN
+	@echo Clean successful!
 
 .PHONY: all clean
 
 -include $(DEP)
-
