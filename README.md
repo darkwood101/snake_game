@@ -1,6 +1,6 @@
 # Snake Game
 
-This is a console-based version of the snake game written in C++, using the `ncurses` library. It runs on the terminal, using basic characters as display. Currently, it is only supported for Linux.
+This is a console-based version of the classic snake game, written in C++, using the `ncurses` library. It runs on the terminal, using basic characters as display. Currently, it is only supported for Linux.
 
 ## Build ##
 
