@@ -12,7 +12,7 @@ private:
 	const unsigned init_length_ = 8;									// Initial length of the snake.
 	unsigned init_y_;													// Initial y coordinate of the snake tail.
 	unsigned init_x_;													// Initial x coordinate of the snake tail.
-	int direction = right;													// Initial direction of the snake.
+	int direction = right;												// Initial direction of the snake.
 	std::pair<unsigned, unsigned> head_;								// Stores coordinates of the head.
 	std::pair<unsigned, unsigned> tail_;								// Stores coordinates of the tail.
 
