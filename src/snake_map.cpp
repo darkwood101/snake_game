@@ -61,7 +61,7 @@ bool SnakeMap::is_blank(std::pair<unsigned, unsigned> coords) {
 	return !((x == 0) || (x == constants::map_width - 1) || (y == 0) || (y == constants::map_height - 1) || (this->snake_->is_in_snake(coords)));
 }
 
-
+//threading
 void SnakeMap::input_thread() {
 	
 	while (true) {

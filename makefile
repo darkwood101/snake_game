@@ -1,27 +1,29 @@
-# Default optimization level
-O ?= 2
 
-all: snake_game
+CC=g++
+TARGET=snake_game
+OBJ_DIR=obj
+SRC_DIR=src
+SRC=$(wildcard $(SRC_DIR)/*.cpp)
+CFLAGS=-std=gnu++1z -g -W -Wall -Wshadow -MMD -MP
+LFLAGS=-lncurses -lpthread
 
--include build/rules.mk
+OBJ=$(SRC:$(SRC_DIR)/%.cpp=$(OBJ_DIR)/%.o)
 
-%.o: src/%.cpp $(BUILDSTAMP)
-	$(call run,$(CXX) $(CPPFLAGS) $(CXXFLAGS) $(DEPCFLAGS) $(O) -o $@ -c,COMPILE,$<)
+all: $(TARGET)
 
-snake_game: test.o snake_map.o snake.o food.o
-	$(call run,$(CXX) $(CXXFLAGS) $(O) -o $@ $^ $(LDFLAGS) $(LIBS),LINK $@)
+$(TARGET): $(OBJ)
+	$(CC) $^ $(LFLAGS) -o $@
+	@echo Compilation successful!
 
-#sleep61: sleep61.cc
-#	$(call run,$(CXX) $(CPPFLAGS) $(CXXFLAGS) $(DEPCFLAGS) $(O) -o $@ $^ $(LDFLAGS) $(LIBS),BUILD $@)
+$(OBJ_DIR)/%.o: $(SRC_DIR)/%.cpp | $(OBJ_DIR)
+	$(CC) $(CFLAGS) -c $< -o $@
 
-ifneq ($(filter -fsanitize=leak,$(CXXFLAGS)),)
-LEAKCHECK = --leak
-endif
+$(OBJ_DIR):
+	mkdir -p $@
 
-clean: clean-main
-clean-main:
-	$(call run,rm -f snake_game *.o *~ *.bak core *.core,CLEAN)
-	$(call run,rm -rf out *.dSYM $(DEPSDIR))
+clean:
+	rm -rv $(OBJ_DIR)
+	rm -v $(TARGET)
 
-.PRECIOUS: %.o
-.PHONY: all clean clean-main distclean check check-%
+.PHONY: all clean
+
