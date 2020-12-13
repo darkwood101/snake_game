@@ -1,7 +1,7 @@
 CC=g++
 
 TARGET=snake_game
-LIBS=-lncurses -lpthread
+LIBS=-lncurses
 
 SRC_DIR=src
 SRC=$(wildcard $(SRC_DIR)/*.cpp)

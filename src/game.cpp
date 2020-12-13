@@ -1,7 +1,6 @@
 #include "game.hpp"
 
 #include <utility>
-#include <atomic>
 #include <ncurses.h>
 #include <cstring>
 #include <time.h>
