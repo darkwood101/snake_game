@@ -19,6 +19,14 @@ Game::Game(Snake* snake, Food* food) {
     game_over = false;
     score = 0;
     delay = init_delay;
+    os::initialize_screen();
+    generate_food();          // Initial food generation.
+    draw_borders();           // Draw the borders of the map.
+    draw_snake();             // Draw the initial position of the snake.
+    draw_food();              // Draw the initial position of the food.
+    print_instructions();     // Print the instructions for the user.
+    print_score();            // Print the score.
+    os::refresh_screen();     // Refresh the screen.
 }
 
 
@@ -27,27 +35,17 @@ Game::Game(Snake* snake, Food* food) {
 //      This function is called from main.
 
 void Game::run() {
-    initscr();                  // Initialize the screen in ncurses mode.
-    clear();                    // Clear the screen.
-    noecho();                   // Disables echo from getch.
-    cbreak();                   // Disable line buffering.
-    curs_set(0);                // Makes the cursor invisible.
-    nodelay(stdscr, true);      // Make getch non-blocking.
-    generate_food();            // Initial food generation.
-    draw_borders();
-    draw_snake();
-    print_instructions();       // Print movement instructions.
-    print_score();              // Print player's score.
     // Loop moving the snake. If <0 is returned, game over.
     // There is a microsleep after each iteration.
     while (true) {
         process_input();
         if (move_snake() < 0) {
-            mvprintw(map_height, 0, "Game over. Your score is %d. \n \nPress q to exit...", score);
-            move(map_height + 3, 0);
-            clrtoeol();      // Clear the score message.
-            refresh();
-            nodelay(stdscr, false);     // Make getch blocking again.
+            char message[100];
+            sprintf(message, "Game over. Your score is %d. \n \nPress q to exit...", score);
+            os::draw_string(std::make_pair(map_height, 0), message);
+            os::clear_line(std::make_pair(map_height + 3, 0));
+            os::refresh_screen();
+            os::block_getch();     // Make getch blocking again.
             // Wait until user presses q.
             while (true) {
                 char ch = getch();
@@ -59,8 +57,8 @@ void Game::run() {
             return;
         }
         print_score();
-        draw_snake();
-        usleep(delay * milliseconds);
+        os::refresh_screen();
+        os::sleep(delay);
     }
 }
 
@@ -81,14 +79,11 @@ void Game::draw_borders() {
             os::draw_char(std::make_pair(y, x), border_char_);
         }
     }
-
-    os::refresh_screen();
 }
 
 
 void Game::draw_food() {
     os::draw_char(food_->get_food_pos(), food_char_);
-    os::refresh_screen();
 }
 
 
@@ -98,7 +93,6 @@ void Game::draw_snake() {
         os::draw_char(snake_pos[i], snake_char_);
     }
     os::draw_char(snake_pos[snake_pos.size() - 1], snake_head_);
-    os::refresh_screen();
 }
 
 // Game::generate_food()
@@ -110,7 +104,6 @@ void Game::generate_food() {
         food_->generate();  
     }
     while (!(cell_is_blank(food_->get_food_pos())));
-    draw_food();
 }
 
 
@@ -171,6 +164,7 @@ int Game::move_snake() {
             delay -= delay_decrement;
         }
         generate_food();
+        draw_food();
     }
     if (is_dead()) {
         game_over = true;
@@ -206,8 +200,7 @@ bool Game::ate_food() {
 //      Prints movement instructions at the beginning of the game.
 
 void Game::print_instructions() {
-    mvprintw(map_height, 0, "Use W, A, S, D to move.");
-    refresh();
+    os::draw_string(std::make_pair(map_height, 0), "Use W, A, S, D to move.");
 }
 
 
@@ -215,5 +208,7 @@ void Game::print_instructions() {
 //      Prints the player score.
 
 void Game::print_score() {
-    mvprintw(map_height + 2, 0, "Score: %d\n", score);
+    char message[100];
+    sprintf(message, "Score: %d\n", score);
+    os::draw_string(std::make_pair(map_height + 2, 0), message);
 }

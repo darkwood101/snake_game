@@ -20,17 +20,16 @@ private:
     bool game_over;                                             // True if game is over.
     unsigned score;                                             // Player's score.
     unsigned delay;                                             // The sleeping delay.
-    static constexpr unsigned milliseconds = 1000;              // How many milliseconds in a second.
     static constexpr unsigned min_delay = 80;                   // Minimum delay in milliseconds.
     static constexpr unsigned init_delay = 200;                 // Initial delay in milliseconds.
-    static constexpr unsigned delay_decrement = 20;             // Delay decrement.
+    static constexpr unsigned delay_decrement = 20;             // Delay decrement in milliseconds.
 
 public:
     Game(Snake* snake, Food* food);                             // Constructor, initializes some values.
     void run();                                                 // Start the game.
-    void draw_borders();                                        // Draws the state of the map.
-    void draw_snake();
-    void draw_food();
+    void draw_borders();                                        // Draws the borders of the map.
+    void draw_snake();                                          // Draws the snake.
+    void draw_food();                                           // Draws the food.
     void generate_food();                                       // Generates food at appropriate position.
     bool cell_is_blank(std::pair<unsigned, unsigned> coords);   // Returns true if the cell at coords is blank.
     void process_input();                                       // Process the user's input.
