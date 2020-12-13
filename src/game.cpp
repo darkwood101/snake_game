@@ -98,10 +98,6 @@ void Game::draw_world() {
 //      Food::get_food_pos() is called in a loop until the appropriate food position is found.
 
 void Game::generate_food() {
-    std::pair<unsigned, unsigned> current_food_pos = food_->get_food_pos();
-    unsigned y = current_food_pos.first;
-    unsigned x = current_food_pos.second;
-    mvprintw(y, x, blank_char_);
     do {
         food_->generate();
     }
@@ -120,7 +116,7 @@ bool Game::cell_is_blank(std::pair<unsigned, unsigned> coords) {
 }
 
 
-// Game::input_thread()
+// Game::process_input()
 //      This function processes any input obtained from the user. If there's any input, the direction of the snake is updated accordingly.
 
 void Game::process_input() {
