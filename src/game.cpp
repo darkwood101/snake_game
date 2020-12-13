@@ -1,4 +1,5 @@
 #include "game.hpp"
+#include "os_dependent.hpp"
 
 #include <utility>
 #include <ncurses.h>
@@ -33,7 +34,8 @@ void Game::run() {
     curs_set(0);                // Makes the cursor invisible.
     nodelay(stdscr, true);      // Make getch non-blocking.
     generate_food();            // Initial food generation.
-    draw_world();               // Initial draw of the map.
+    draw_borders();
+    draw_snake();
     print_instructions();       // Print movement instructions.
     print_score();              // Print player's score.
     // Loop moving the snake. If <0 is returned, game over.
@@ -57,7 +59,7 @@ void Game::run() {
             return;
         }
         print_score();
-        draw_world();
+        draw_snake();
         usleep(delay * milliseconds);
     }
 }
@@ -67,31 +69,37 @@ void Game::run() {
 //      Draws the state of the map. For each character, it's checked whether
 //      it's snake head, snake body, border, food, or blank.
 
-void Game::draw_world() {
-    for (unsigned y = 0; y != map_height; ++y) {
-        for (unsigned x = 0; x != map_width; ++x) {
-            std::pair<unsigned, unsigned> coords = std::make_pair(y, x);
-            if (snake_->is_snake_head(coords)) {
-                mvprintw(y, x, snake_head_);
-            }
-            else if (snake_->is_in_snake(coords)) {
-                    mvprintw(y, x, snake_char_);
-            }
-            else if (coords == food_->get_food_pos()) {
-                mvprintw(y, x, food_char_);
-            }
-            else if (x == 0 || x == map_width - 1 || y == 0 || y == map_height - 1) {
-                mvprintw(y, x, border_char_);
-            }
-            else {
-                mvprintw(y, x, blank_char_);
-            }
+void Game::draw_borders() {
+    for (unsigned y = 0; y < map_height; ++y) {
+        for (unsigned x = 0; x < map_width; x += map_width - 1) {
+            os::draw_char(std::make_pair(y, x), border_char_);
         }
     }
 
-    refresh();
+    for (unsigned y = 0; y < map_height; y += map_height - 1) {
+        for (unsigned x = 1; x < map_width - 1; ++x) {
+            os::draw_char(std::make_pair(y, x), border_char_);
+        }
+    }
+
+    os::refresh_screen();
 }
 
+
+void Game::draw_food() {
+    os::draw_char(food_->get_food_pos(), food_char_);
+    os::refresh_screen();
+}
+
+
+void Game::draw_snake() {
+    std::vector<std::pair<unsigned, unsigned>> snake_pos = snake_->get_snake_pos();
+    for (size_t i = 0; i != snake_pos.size() - 1; ++i) {
+        os::draw_char(snake_pos[i], snake_char_);
+    }
+    os::draw_char(snake_pos[snake_pos.size() - 1], snake_head_);
+    os::refresh_screen();
+}
 
 // Game::generate_food()
 //      Generates food on a new position. The new position must be blank. The function
@@ -99,10 +107,10 @@ void Game::draw_world() {
 
 void Game::generate_food() {
     do {
-        food_->generate();
+        food_->generate();  
     }
     while (!(cell_is_blank(food_->get_food_pos())));
-
+    draw_food();
 }
 
 
@@ -155,8 +163,8 @@ void Game::process_input() {
 //      If dead, returns -1. If not dead, draws the map and returns 0.
 
 int Game::move_snake() {
+    snake_->advance();
     bool grow = ate_food();
-    snake_->move(grow);
     if (grow) {
         ++score;
         if ((score % 10 == 0) && (delay > min_delay)) {
@@ -168,6 +176,10 @@ int Game::move_snake() {
         game_over = true;
         return -1;
     }
+    else if (!grow) {
+        snake_->clear_tail();
+    }
+    draw_snake();
     return 0;
 }
 

@@ -21,9 +21,11 @@ public:
     Snake();                                                            // Constructor.
     bool is_in_snake(std::pair<unsigned, unsigned> coords);             // Returns true if the cell at `coords` is part of the snake body.
     bool is_snake_head(std::pair<unsigned, unsigned> coords);           // Returns true if the cell at `coords` is the snake head.
-    void move(bool grow);                                               // Moves the snake.
+    void advance();                                                        // Moves the snake.
     void set_direction(int dir);                                        // Changes snake direction.
     std::pair<unsigned, unsigned> get_head();                           // Returns the coordinates of the snake head.
+    std::vector<std::pair<unsigned, unsigned>> get_snake_pos();
+    void clear_tail();
     // Enumeration of different movement directions.
     static constexpr int up = 0;
     static constexpr int down = 3;

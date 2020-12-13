@@ -12,11 +12,11 @@ private:
     Snake* snake_;
     Food* food_;
     // Characters for representing different objects on the map.
-    const char* border_char_ = "o";
-    const char* blank_char_ = " ";
-    const char* food_char_ = "$";
-    const char* snake_char_ = "x";
-    const char* snake_head_ = "o";
+    const char border_char_ = 'o';
+    const char blank_char_ = ' ';
+    const char food_char_ = '$';
+    const char snake_char_ = 'x';
+    const char snake_head_ = 'o';
     bool game_over;                                             // True if game is over.
     unsigned score;                                             // Player's score.
     unsigned delay;                                             // The sleeping delay.
@@ -28,7 +28,9 @@ private:
 public:
     Game(Snake* snake, Food* food);                             // Constructor, initializes some values.
     void run();                                                 // Start the game.
-    void draw_world();                                          // Draws the state of the map.
+    void draw_borders();                                        // Draws the state of the map.
+    void draw_snake();
+    void draw_food();
     void generate_food();                                       // Generates food at appropriate position.
     bool cell_is_blank(std::pair<unsigned, unsigned> coords);   // Returns true if the cell at coords is blank.
     void process_input();                                       // Process the user's input.
@@ -38,8 +40,8 @@ public:
     void print_instructions();                                  // Prints movement instructions.
     void print_score();                                         // Prints the player score.
     // The height and width of the map.
-    static const unsigned map_height = 20;
-    static const unsigned map_width = 50;
+    static constexpr unsigned map_height = 20;
+    static constexpr unsigned map_width = 50;
 };
 
 

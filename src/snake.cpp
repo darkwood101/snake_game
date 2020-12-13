@@ -1,5 +1,6 @@
 #include "snake.hpp"
 #include "game.hpp"
+#include "os_dependent.hpp"
 #include <ncurses.h>
 #include <random>
 
@@ -52,7 +53,7 @@ bool Snake::is_snake_head(std::pair<unsigned, unsigned> coords) {
 //      The access to direction is locked by the mutex, to avoid race conditions
 //      with the thread that's listening to the user input.
 
-void Snake::move(bool grow) {
+void Snake::advance() {
 
     unsigned head_y = snake_pos_[snake_pos_.size() - 1].first;
     unsigned head_x = snake_pos_[snake_pos_.size() - 1].second;
@@ -87,10 +88,6 @@ void Snake::move(bool grow) {
     std::pair<unsigned, unsigned> new_pair = std::make_pair(head_y, head_x);
     head_ = new_pair;
     snake_pos_.push_back(new_pair);
-    if (!grow) {
-        snake_pos_.erase(snake_pos_.begin());
-    }
-    tail_ = snake_pos_[0];
 }
 
 
@@ -111,4 +108,14 @@ void Snake::set_direction(int dir) {
 
 std::pair<unsigned, unsigned> Snake::get_head() {
     return head_;
+}
+
+std::vector<std::pair<unsigned, unsigned>> Snake::get_snake_pos() {
+    return snake_pos_;
+}
+
+void Snake::clear_tail() {
+    os::draw_char(snake_pos_[0], ' ');
+    snake_pos_.erase(snake_pos_.begin());
+    tail_ = snake_pos_[0];
 }
