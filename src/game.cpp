@@ -160,6 +160,7 @@ void Game::process_input() {
 
 int Game::move_snake() {
     bool grow = ate_food();
+    snake_->move(grow);
     if (grow) {
         ++score;
         if ((score % 10 == 0) && (delay > min_delay)) {
@@ -167,7 +168,6 @@ int Game::move_snake() {
         }
         generate_food();
     }
-    snake_->move(grow);
     if (is_dead()) {
         game_over = true;
         return -1;
