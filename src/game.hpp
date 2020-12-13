@@ -3,7 +3,6 @@
 
 #include "snake.hpp"
 #include "food.hpp"
-#include <thread>
 
 
 class Game {
@@ -25,7 +24,6 @@ private:
     static constexpr unsigned min_delay = 80;                   // Minimum delay in milliseconds.
     static constexpr unsigned init_delay = 200;                 // Initial delay in milliseconds.
     static constexpr unsigned delay_decrement = 20;             // Delay decrement.
-    std::thread th;                                             // Thread which will wait for user input.
 
 public:
     Game(Snake* snake, Food* food);                             // Constructor, initializes some values.
@@ -33,8 +31,7 @@ public:
     void draw_world();                                          // Draws the state of the map.
     void generate_food();                                       // Generates food at appropriate position.
     bool cell_is_blank(std::pair<unsigned, unsigned> coords);   // Returns true if the cell at coords is blank.
-    void input_thread();                                        // A function that runs in a separate thread and waits for input.
-    void wait_input();                                          // Wrapper around input_thread.
+    void process_input();                                       // Process the user's input.
     int move_snake();                                           // Moves snake by one cell. Returns -1 if the snake dies.
     bool is_dead();                                             // Checks whether the snake is dead.
     bool ate_food();                                            // Checks whether the snake hit the food.

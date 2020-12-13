@@ -57,12 +57,10 @@ void Snake::move(bool grow) {
     unsigned head_y = snake_pos_[snake_pos_.size() - 1].first;
     unsigned head_x = snake_pos_[snake_pos_.size() - 1].second;
 
-    direction_mutex.lock();
     if (new_directions.size() > 0) {
-        direction = new_directions[0];
-        new_directions.erase(new_directions.begin());
+        direction = new_directions.front();
+        new_directions.pop();
     }
-    direction_mutex.unlock();
 
     switch (direction) {
         case up: {
@@ -104,9 +102,7 @@ void Snake::move(bool grow) {
 //      opposite of the current direction.
 
 void Snake::set_direction(int dir) {
-    direction_mutex.lock();
-    new_directions.push_back(dir);
-    direction_mutex.unlock();
+    new_directions.push(dir);
 }
 
 

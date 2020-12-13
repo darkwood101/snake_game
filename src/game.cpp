@@ -32,7 +32,7 @@ void Game::run() {
     noecho();                   // Disables echo from getch.
     cbreak();                   // Disable line buffering.
     curs_set(0);                // Makes the cursor invisible.
-    wait_input();               // Detaches a thread to wait for input.
+    nodelay(stdscr, true);      // Make getch non-blocking.
     generate_food();            // Initial food generation.
     draw_world();               // Initial draw of the map.
     print_instructions();       // Print movement instructions.
@@ -40,12 +40,20 @@ void Game::run() {
     // Loop moving the snake. If <0 is returned, game over.
     // There is a microsleep after each iteration.
     while (true) {
+        process_input();
         if (move_snake() < 0) {
             mvprintw(map_height, 0, "Game over. Your score is %d. \n \nPress q to exit...", score);
             move(map_height + 3, 0);
-            clrtoeol(); // Clear the score message.
+            clrtoeol();      // Clear the score message.
             refresh();
-            th.join();  // Wait for the input thread to finish.
+            nodelay(stdscr, false);     // Make getch blocking again.
+            // Wait until user presses q.
+            while (true) {
+                char ch = getch();
+                if (ch == 'q') {
+                    break;
+                }
+            }
             endwin();
             return;
         }
@@ -114,18 +122,14 @@ bool Game::cell_is_blank(std::pair<unsigned, unsigned> coords) {
 
 
 // Game::input_thread()
-//      This function runs on a separate thread from the main thread. It blocks on the getch() call waiting for user input.
-//      Once the user input is obtained, the direction of the snake is updated accordingly.
+//      This function processes any input obtained from the user. If there's any input, the direction of the snake is updated accordingly.
 
-void Game::input_thread() {
+void Game::process_input() {
     
     while (true) {
         char ch = getch();
-        while (game_over) {
-            if (ch == 'q') {
-                return;
-            }
-            ch = getch();
+        if (ch == ERR) {
+            return;
         }
         switch(ch) {
             case 'w': {
@@ -148,14 +152,6 @@ void Game::input_thread() {
 }
 
 
-// Game::wait_input()
-//      A wrapper for Game::input_thread. It runs Game::input_thread in a separate thread.
-
-void Game::wait_input() {
-    th = std::thread(&Game::input_thread, this);
-}
-
-
 // Game::move_snake()
 //      Controls a solid portion of the game dynamic.
 //      Checks whether the snake hit the food.
@@ -165,7 +161,6 @@ void Game::wait_input() {
 
 int Game::move_snake() {
     bool grow = ate_food();
-    snake_->move(grow);
     if (grow) {
         ++score;
         if ((score % 10 == 0) && (delay > min_delay)) {
@@ -173,6 +168,7 @@ int Game::move_snake() {
         }
         generate_food();
     }
+    snake_->move(grow);
     if (is_dead()) {
         game_over = true;
         return -1;
