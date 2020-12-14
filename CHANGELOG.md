@@ -1,6 +1,6 @@
 # Change log
 
-## [v1.2] - 14-Dec-2020
+## v1.2 - 14-Dec-2020
 
 ### Fixed
 - In the previous version, the entire board was re-drawn on each iteration. This has been fixed and now only the objects that change are re-drawn (issue [#2]).
