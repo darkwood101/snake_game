@@ -12,7 +12,7 @@
 //      The check is performed by Game::move_snake().
 
 void Food::generate() {
-    static bool first_generation = true;
+    static bool first_generation = true;    // We want to set the generator seed only once.
     if (first_generation) {
         srand(time(NULL));
         first_generation = false;

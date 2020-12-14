@@ -1,4 +1,5 @@
 #include "game.hpp"
+#include "os_dependent.hpp"
 
 #include <utility>
 #include <ncurses.h>
@@ -10,42 +11,42 @@
 
 // Game::Game(snake, food)
 //      Initializes the instance of Game with pointers to Snake and Food objects.
-//      Sets the initial values of game_over and score.
+//      Initializes the screen, and draws the initial state of the world.
 
 Game::Game(Snake* snake, Food* food) {
     snake_ = snake;
     food_ = food;
-    game_over = false;
     score = 0;
     delay = init_delay;
+    os::initialize_screen();  // Initialize the screen.
+    generate_food();          // Initial food generation.
+    draw_borders();           // Draw the borders of the map.
+    draw_snake();             // Draw the initial position of the snake.
+    draw_food();              // Draw the initial position of the food.
+    print_instructions();     // Print the instructions for the user.
+    print_score();            // Print the score.
+    os::refresh_screen();     // Refresh the screen.
 }
 
 
 // Game::run()
-//      Sets the initial state of the screen and runs the game.
+//      Runs the game.
 //      This function is called from main.
+//      NOTE: to reduce the amount of unnecessary refreshes, only Game::run (except the constructor) should call
+//      os::refresh_screen()!!!
 
 void Game::run() {
-    initscr();                  // Initialize the screen in ncurses mode.
-    clear();                    // Clear the screen.
-    noecho();                   // Disables echo from getch.
-    cbreak();                   // Disable line buffering.
-    curs_set(0);                // Makes the cursor invisible.
-    nodelay(stdscr, true);      // Make getch non-blocking.
-    generate_food();            // Initial food generation.
-    draw_world();               // Initial draw of the map.
-    print_instructions();       // Print movement instructions.
-    print_score();              // Print player's score.
     // Loop moving the snake. If <0 is returned, game over.
     // There is a microsleep after each iteration.
     while (true) {
         process_input();
         if (move_snake() < 0) {
-            mvprintw(map_height, 0, "Game over. Your score is %d. \n \nPress q to exit...", score);
-            move(map_height + 3, 0);
-            clrtoeol();      // Clear the score message.
-            refresh();
-            nodelay(stdscr, false);     // Make getch blocking again.
+            char message[100];
+            sprintf(message, "Game over. Your score is %d. \n \nPress q to exit...", score);
+            os::draw_string(std::make_pair(map_height, 0), message);
+            os::clear_line(std::make_pair(map_height + 3, 0));
+            os::refresh_screen();
+            os::block_getch();     // Make getch blocking again.
             // Wait until user presses q.
             while (true) {
                 char ch = getch();
@@ -57,39 +58,47 @@ void Game::run() {
             return;
         }
         print_score();
-        draw_world();
-        usleep(delay * milliseconds);
+        os::refresh_screen();
+        os::sleep(delay);
     }
 }
 
 
 // Game::draw_world()
-//      Draws the state of the map. For each character, it's checked whether
-//      it's snake head, snake body, border, food, or blank.
+//      Draws the borders of the map.
 
-void Game::draw_world() {
-    for (unsigned y = 0; y != map_height; ++y) {
-        for (unsigned x = 0; x != map_width; ++x) {
-            std::pair<unsigned, unsigned> coords = std::make_pair(y, x);
-            if (snake_->is_snake_head(coords)) {
-                mvprintw(y, x, snake_head_);
-            }
-            else if (snake_->is_in_snake(coords)) {
-                    mvprintw(y, x, snake_char_);
-            }
-            else if (coords == food_->get_food_pos()) {
-                mvprintw(y, x, food_char_);
-            }
-            else if (x == 0 || x == map_width - 1 || y == 0 || y == map_height - 1) {
-                mvprintw(y, x, border_char_);
-            }
-            else {
-                mvprintw(y, x, blank_char_);
-            }
+void Game::draw_borders() {
+    for (unsigned y = 0; y < map_height; ++y) {
+        for (unsigned x = 0; x < map_width; x += map_width - 1) {
+            os::draw_char(std::make_pair(y, x), border_char_);
         }
     }
 
-    refresh();
+    for (unsigned y = 0; y < map_height; y += map_height - 1) {
+        for (unsigned x = 1; x < map_width - 1; ++x) {
+            os::draw_char(std::make_pair(y, x), border_char_);
+        }
+    }
+}
+
+
+// Game::draw_food()
+//      Draws the food.
+
+void Game::draw_food() {
+    os::draw_char(food_->get_food_pos(), food_char_);
+}
+
+
+// Game::draw_snake()
+//      Draw the snake.
+
+void Game::draw_snake() {
+    std::vector<std::pair<unsigned, unsigned>> snake_pos = snake_->get_snake_pos();
+    for (size_t i = 0; i != snake_pos.size() - 1; ++i) {
+        os::draw_char(snake_pos[i], snake_char_);
+    }
+    os::draw_char(snake_pos[snake_pos.size() - 1], snake_head_);
 }
 
 
@@ -99,10 +108,9 @@ void Game::draw_world() {
 
 void Game::generate_food() {
     do {
-        food_->generate();
+        food_->generate();  
     }
     while (!(cell_is_blank(food_->get_food_pos())));
-
 }
 
 
@@ -117,7 +125,9 @@ bool Game::cell_is_blank(std::pair<unsigned, unsigned> coords) {
 
 
 // Game::process_input()
-//      This function processes any input obtained from the user. If there's any input, the direction of the snake is updated accordingly.
+//      Processes any input obtained from the user. It's called after each microsleep (millisleep hehe)
+//      and it harvests all the input that was sent by the user during the sleep. All those requests for new directions
+//      are then added to the deque Snake::new_directions_ (with some exceptions), which is handled by Snake::set_direction.
 
 void Game::process_input() {
     
@@ -149,25 +159,30 @@ void Game::process_input() {
 
 // Game::move_snake()
 //      Controls a solid portion of the game dynamic.
+//      Advances the snake's head.
 //      Checks whether the snake hit the food.
-//      Reduces delay accordingly.
-//      It moves the snake, and checks whether it's dead.
-//      If dead, returns -1. If not dead, draws the map and returns 0.
+//      Checks whether the snake is dead. Returns -1 if the snake is dead, 0 otherwise.
+//      If the snake didn't hit food, it clears the tail of the snake.
+//      If the snake did hit food. it updates score and appropriately reduces the microsleep length.
 
 int Game::move_snake() {
+    snake_->advance();
     bool grow = ate_food();
-    snake_->move(grow);
-    if (grow) {
+    if (is_dead(grow)) {
+        return -1;
+    }
+    if (!grow) {
+        snake_->clear_tail(blank_char_);
+    }
+    else {
         ++score;
         if ((score % 10 == 0) && (delay > min_delay)) {
             delay -= delay_decrement;
         }
         generate_food();
+        draw_food();
     }
-    if (is_dead()) {
-        game_over = true;
-        return -1;
-    }
+    draw_snake();
     return 0;
 }
 
@@ -175,8 +190,13 @@ int Game::move_snake() {
 // Game::is_dead()
 //      Returns true if the snake hit a wall or itself.
 //      This is equivalent to checking whether the snake head is in a blank cell or not.
+//      One exception is the snake hitting its own tail. In that case, if the snake didn't eat any food
+//      (i.e. grow is false), the snake shouldn't die.
 
-bool Game::is_dead() {
+bool Game::is_dead(bool grow) {
+    if ((!grow) && (snake_->get_head() == snake_->get_tail())) {
+        return false;
+    }
     return !(cell_is_blank(snake_->get_head()));
 }
 
@@ -194,8 +214,7 @@ bool Game::ate_food() {
 //      Prints movement instructions at the beginning of the game.
 
 void Game::print_instructions() {
-    mvprintw(map_height, 0, "Use W, A, S, D to move.");
-    refresh();
+    os::draw_string(std::make_pair(map_height, 0), "Use W, A, S, D to move.");
 }
 
 
@@ -203,5 +222,7 @@ void Game::print_instructions() {
 //      Prints the player score.
 
 void Game::print_score() {
-    mvprintw(map_height + 2, 0, "Score: %d\n", score);
+    char message[100];
+    sprintf(message, "Score: %d\n", score);
+    os::draw_string(std::make_pair(map_height + 2, 0), message);
 }
