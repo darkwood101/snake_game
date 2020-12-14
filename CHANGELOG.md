@@ -17,7 +17,6 @@
 - There was a bug which caused the snake to die if you pressed different keys rapidly. This has been fixed.
 - The use of `ncurses` library caused some rare issues with the terminal display. This is due to the lack of `ncurses` support for multithreading applications. The game has been switched to a single thread.
 
-[v1.2]: https://github.com/darkwood101/snake_game/releases/tag/v1.1
 [#2]: https://github.com/darkwood101/snake_game/issues/2
 [#3]: https://github.com/darkwood101/snake_game/issues/3
 [v1.1]: https://github.com/darkwood101/snake_game/releases/tag/v1.1
