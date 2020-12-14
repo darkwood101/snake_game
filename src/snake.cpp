@@ -13,6 +13,7 @@
 Snake::Snake() {
     init_x_ = Game::map_width / 2 - (init_length_ / 2);
     init_y_ = Game::map_height / 2;
+
     for (unsigned i = 0; i != init_length_; ++i) {
         snake_pos_.push_back(std::make_pair(init_y_, init_x_ + i));
     }
@@ -37,52 +38,35 @@ bool Snake::is_in_snake(std::pair<unsigned, unsigned> coords) {
 }
 
 
-// Snake::is_snake_head(coords)
-//      Returns true if the snake head is located at `coords`.
-
-bool Snake::is_snake_head(std::pair<unsigned, unsigned> coords) {
-    return coords == snake_pos_[snake_pos_.size() - 1];
-}
-
-
 // Snake::move(grow)
 //      Performs the movement of the snake. Depending on the direction,
 //      positions of the head are changed and are pushed into the positions vector.
-//      If grow is true, it means that the snake should grow one unit, so in that case
-//      the tail is left alone. Otherwise, the tail is erased from the vector.
-//      The access to direction is locked by the mutex, to avoid race conditions
-//      with the thread that's listening to the user input.
 
 void Snake::advance() {
-
     unsigned head_y = snake_pos_[snake_pos_.size() - 1].first;
     unsigned head_x = snake_pos_[snake_pos_.size() - 1].second;
 
-    if (new_directions.size() > 0) {
-        direction = new_directions.front();
-        new_directions.pop();
+    if (new_directions_.size() > 0) {
+        direction = new_directions_.front();
+        new_directions_.pop_front();
     }
 
     switch (direction) {
-        case up: {
+        case up:
             --head_y;
             break;
-        }
 
-        case down: {
+        case down:
             ++head_y;
             break;
-        }
 
-        case left: {
+        case left:
             --head_x;
             break;
-        }
 
-        case right: {
+        case right:
             ++head_x;
             break;
-        }
     }
 
     std::pair<unsigned, unsigned> new_pair = std::make_pair(head_y, head_x);
@@ -92,14 +76,35 @@ void Snake::advance() {
 
 
 // Snake::set_direction(int dir)
-//      Changes the direction of the snake to `dir`.
-//      If `dir` is the opposite of the current direction,
-//      nothing happens. The condition `dir + direction == 3` is specific
-//      and somewhat hardcoded. It will be true if and only if `dir` is the
-//      opposite of the current direction.
+//      Pushes `dir` into the deque `new_directions_`, which contains
+//      all directions requested by the user that will eventually be executed.
+//      If `dir` is the same as the latest direction requested by the user, nothing happens.
+//      This is to prevent locking the snake going in one direction -- if the user presses and holds
+//      down a key, Game::process_input will send requests much faster than the game delay is.
+//      Then, the snake will stop being responsive until all directions are exhausted, which usually
+//      causes the snake to die. This prevents that from happening. Some abuses are still possible,
+//      where the player rapidly and continuously presses two different keys, which will cause the snake
+//      to move on a zig-zag trajectory, but that is okay and is less problematic than the previously
+//      described problem.
 
 void Snake::set_direction(int dir) {
-    new_directions.push(dir);
+    if (dir != get_latest_direction()) {
+        new_directions_.push_back(dir);
+    }
+}
+
+
+// Snake::get_latest_direction()
+//      Returns the direction that was most recently requested by the user. If the `new_directions_` deque is empty,
+//      returns the current direction.
+
+int Snake::get_latest_direction() {
+    if (new_directions_.empty()) {
+        return direction;
+    }
+    else {
+        return new_directions_.back();
+    }
 }
 
 
@@ -110,12 +115,29 @@ std::pair<unsigned, unsigned> Snake::get_head() {
     return head_;
 }
 
+
+// Snake::get_tail()
+//      Returns the coordinates of the snake tail.
+
+std::pair<unsigned, unsigned> Snake::get_tail() {
+    return tail_;
+}
+
+
+// Snake::get_snake_pos()
+//      Returns the vector of positions of snake body.
+
 std::vector<std::pair<unsigned, unsigned>> Snake::get_snake_pos() {
     return snake_pos_;
 }
 
-void Snake::clear_tail() {
-    os::draw_char(snake_pos_[0], ' ');
+
+// Snake::clear_tail()
+//      Erases the snake tail from the vector, and draws a blank char on the board.
+//      Updates the tail_ attribute.
+
+void Snake::clear_tail(char blank_char) {
+    os::draw_char(snake_pos_[0], blank_char);
     snake_pos_.erase(snake_pos_.begin());
     tail_ = snake_pos_[0];
 }

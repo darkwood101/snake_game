@@ -1,3 +1,9 @@
+/*
+This is the header files where the class Game is declared. This is probably the core class of the game,
+as it controls the flow and the dynamic of the entire game. It contains pointers to instances of Snake and Food.
+It also contains a lot of helper methods for controlling the game flow.
+*/
+
 #ifndef GAME_H
 #define GAME_H
 
@@ -17,7 +23,6 @@ private:
     const char food_char_ = '$';
     const char snake_char_ = 'x';
     const char snake_head_ = 'o';
-    bool game_over;                                             // True if game is over.
     unsigned score;                                             // Player's score.
     unsigned delay;                                             // The sleeping delay.
     static constexpr unsigned min_delay = 80;                   // Minimum delay in milliseconds.
@@ -31,10 +36,10 @@ public:
     void draw_snake();                                          // Draws the snake.
     void draw_food();                                           // Draws the food.
     void generate_food();                                       // Generates food at appropriate position.
-    bool cell_is_blank(std::pair<unsigned, unsigned> coords);   // Returns true if the cell at coords is blank.
+    bool cell_is_blank(std::pair<unsigned, unsigned> coords);   // Returns true if the cell at `coords` is blank.
     void process_input();                                       // Process the user's input.
     int move_snake();                                           // Moves snake by one cell. Returns -1 if the snake dies.
-    bool is_dead();                                             // Checks whether the snake is dead.
+    bool is_dead(bool grow);                                    // Checks whether the snake is dead.
     bool ate_food();                                            // Checks whether the snake hit the food.
     void print_instructions();                                  // Prints movement instructions.
     void print_score();                                         // Prints the player score.

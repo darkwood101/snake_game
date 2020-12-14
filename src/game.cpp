@@ -11,15 +11,14 @@
 
 // Game::Game(snake, food)
 //      Initializes the instance of Game with pointers to Snake and Food objects.
-//      Sets the initial values of game_over and score.
+//      Initializes the screen, and draws the initial state of the world.
 
 Game::Game(Snake* snake, Food* food) {
     snake_ = snake;
     food_ = food;
-    game_over = false;
     score = 0;
     delay = init_delay;
-    os::initialize_screen();
+    os::initialize_screen();  // Initialize the screen.
     generate_food();          // Initial food generation.
     draw_borders();           // Draw the borders of the map.
     draw_snake();             // Draw the initial position of the snake.
@@ -31,8 +30,10 @@ Game::Game(Snake* snake, Food* food) {
 
 
 // Game::run()
-//      Sets the initial state of the screen and runs the game.
+//      Runs the game.
 //      This function is called from main.
+//      NOTE: to reduce the amount of unnecessary refreshes, only Game::run (except the constructor) should call
+//      os::refresh_screen()!!!
 
 void Game::run() {
     // Loop moving the snake. If <0 is returned, game over.
@@ -64,8 +65,7 @@ void Game::run() {
 
 
 // Game::draw_world()
-//      Draws the state of the map. For each character, it's checked whether
-//      it's snake head, snake body, border, food, or blank.
+//      Draws the borders of the map.
 
 void Game::draw_borders() {
     for (unsigned y = 0; y < map_height; ++y) {
@@ -82,10 +82,16 @@ void Game::draw_borders() {
 }
 
 
+// Game::draw_food()
+//      Draws the food.
+
 void Game::draw_food() {
     os::draw_char(food_->get_food_pos(), food_char_);
 }
 
+
+// Game::draw_snake()
+//      Draw the snake.
 
 void Game::draw_snake() {
     std::vector<std::pair<unsigned, unsigned>> snake_pos = snake_->get_snake_pos();
@@ -94,6 +100,7 @@ void Game::draw_snake() {
     }
     os::draw_char(snake_pos[snake_pos.size() - 1], snake_head_);
 }
+
 
 // Game::generate_food()
 //      Generates food on a new position. The new position must be blank. The function
@@ -118,7 +125,9 @@ bool Game::cell_is_blank(std::pair<unsigned, unsigned> coords) {
 
 
 // Game::process_input()
-//      This function processes any input obtained from the user. If there's any input, the direction of the snake is updated accordingly.
+//      Processes any input obtained from the user. It's called after each microsleep (millisleep hehe)
+//      and it harvests all the input that was sent by the user during the sleep. All those requests for new directions
+//      are then added to the deque Snake::new_directions_ (with some exceptions), which is handled by Snake::set_direction.
 
 void Game::process_input() {
     
@@ -150,28 +159,28 @@ void Game::process_input() {
 
 // Game::move_snake()
 //      Controls a solid portion of the game dynamic.
+//      Advances the snake's head.
 //      Checks whether the snake hit the food.
-//      Reduces delay accordingly.
-//      It moves the snake, and checks whether it's dead.
-//      If dead, returns -1. If not dead, draws the map and returns 0.
+//      Checks whether the snake is dead. Returns -1 if the snake is dead, 0 otherwise.
+//      If the snake didn't hit food, it clears the tail of the snake.
+//      If the snake did hit food. it updates score and appropriately reduces the microsleep length.
 
 int Game::move_snake() {
     snake_->advance();
     bool grow = ate_food();
-    if (grow) {
+    if (is_dead(grow)) {
+        return -1;
+    }
+    if (!grow) {
+        snake_->clear_tail(blank_char_);
+    }
+    else {
         ++score;
         if ((score % 10 == 0) && (delay > min_delay)) {
             delay -= delay_decrement;
         }
         generate_food();
         draw_food();
-    }
-    if (is_dead()) {
-        game_over = true;
-        return -1;
-    }
-    else if (!grow) {
-        snake_->clear_tail();
     }
     draw_snake();
     return 0;
@@ -181,8 +190,13 @@ int Game::move_snake() {
 // Game::is_dead()
 //      Returns true if the snake hit a wall or itself.
 //      This is equivalent to checking whether the snake head is in a blank cell or not.
+//      One exception is the snake hitting its own tail. In that case, if the snake didn't eat any food
+//      (i.e. grow is false), the snake shouldn't die.
 
-bool Game::is_dead() {
+bool Game::is_dead(bool grow) {
+    if ((!grow) && (snake_->get_head() == snake_->get_tail())) {
+        return false;
+    }
     return !(cell_is_blank(snake_->get_head()));
 }
 
