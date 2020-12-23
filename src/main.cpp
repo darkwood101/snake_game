@@ -1,10 +1,9 @@
+#include "globals.hpp"
 #include "game.hpp"
 
-
 int main() {
-    Snake snake;
-    Food food;
-    Game game(&snake, &food);
-    game.run();
+    Game game;
+    if (game.startScreen() == globals::userExit) return 0;
+    if (game.run() == globals::playerDead) game.gameOverScreen();
     return 0;
 }

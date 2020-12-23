@@ -10,37 +10,41 @@ as well as changing the direction of the snake.
 #ifndef SNAKE_H
 #define SNAKE_H
 
-#include <utility>
+#include "texture.hpp"
 #include <deque>
 #include <vector>
 
 class Snake {
 
 private:
-    std::vector<std::pair<unsigned, unsigned>> snake_pos_;              // Stores coordinates of snake body in form (y, x).
-    const unsigned init_length_ = 8;                                    // Initial length of the snake.
-    unsigned init_y_;                                                   // Initial y coordinate of the snake tail.
-    unsigned init_x_;                                                   // Initial x coordinate of the snake tail.
-    int direction = right;                                              // Initial direction of the snake.
-    std::deque<int> new_directions_;                                     // This stores all directions that were requested by the user.
-    std::pair<unsigned, unsigned> head_;                                // Stores coordinates of the head.
-    std::pair<unsigned, unsigned> tail_;                                // Stores coordinates of the tail.
+    std::vector<std::pair<unsigned, unsigned>> snakePos_;       // Stores coordinates of snake body in form (y, x).
+    const size_t initLength_ = 8;                               // Initial length of the snake.
+    unsigned initY_;                                            // Initial y coordinate of the snake tail.
+    unsigned initX_;                                            // Initial x coordinate of the snake tail.
+    int direction = right;                                      // Initial direction of the snake.
+    std::deque<int> newDirections_;                             // This stores all directions that were requested by the user.
+    std::pair<unsigned, unsigned> head_;                        // Stores coordinates of the head.
+    std::pair<unsigned, unsigned> tail_;                        // Stores coordinates of the tail.
+    Texture snakeHead_;                                         // Texture for the snake head.
+    Texture snakeBody_;                                         // Texture for the snake body.
 
 public:
-    Snake();                                                            // Constructor.
-    bool is_in_snake(std::pair<unsigned, unsigned> coords);             // Returns true if the cell at `coords` is part of the snake body.
-    void advance();                                                     // Moves the snake.
-    void set_direction(int dir);                                        // Changes snake direction.
-    int get_latest_direction();                                         // Returns the latest direction requested by the user.
-    std::pair<unsigned, unsigned> get_head();                           // Returns the coordinates of the snake head.
-    std::pair<unsigned, unsigned> get_tail();                           // Get the coordinates of the tail.
-    std::vector<std::pair<unsigned, unsigned>> get_snake_pos();         // Return the vector of snake positions.
-    void clear_tail(char blank_char);                                   // Erase the tail from the vector of snake positions and clear it from the screen.
+    Snake(SDL_Renderer* renderer);                              // Constructor.
+    bool isInSnake(std::pair<unsigned, unsigned> coords);       // Returns true if the cell at `coords` is part of the snake body.
+    void advance();                                             // Moves the snake.
+    void setDirection(int dir);                                 // Changes snake direction.
+    int getLatestDirection();                                   // Returns the latest direction requested by the user.
+    void render();                                              // Renders the snake.
+    std::pair<unsigned, unsigned> getHead();                    // Returns the coordinates of the snake head.
+    std::pair<unsigned, unsigned> getTail();                    // Returns the coordinates of the snake tail.
+    void clearTail();                                           // Erase the tail from the vector of snake positions.
     // Enumeration of different movement directions.
-    static constexpr int up = 0;
-    static constexpr int down = 3;
-    static constexpr int left = 1;
-    static constexpr int right = 2;
+    enum Direction {
+        up,
+        down,
+        left,
+        right
+    };
 };
 
 #endif
