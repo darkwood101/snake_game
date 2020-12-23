@@ -288,5 +288,5 @@ bool Game::ateFood() {
 //      Updates the delay between frames. The update happens only if the score is a multiple of 10.
 
 void Game::updateDelay() {
-    if (score_ % 10 == 0) delay_ -= delayDecrement_;
+    if ((score_ % 10 == 0) && (delay_ > minDelay_)) delay_ -= delayDecrement_;
 }
