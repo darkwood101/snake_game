@@ -59,6 +59,7 @@ void Game::init() {
     if (renderer_ == nullptr) globals::SDLError();
     SDL_SetRenderDrawColor(renderer_, 0, 0, 0, 255);
     icon_ = SDL_LoadBMP("res/icon.bmp");
+    if (icon_ == nullptr) globals::SDLError();
     SDL_SetWindowIcon(mainWindow_, icon_);
 }
 
