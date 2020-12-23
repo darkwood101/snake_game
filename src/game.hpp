@@ -29,6 +29,7 @@ private:
     SDL_Window* mainWindow_;                            // Pointer to the game window.
     SDL_Renderer* renderer_;                            // Pointer to the renderer.
     SDL_Event event_;                                   // Used to detect events.
+    SDL_Surface* icon_;
     Snake* snake_;                                      // Pointer to instance of Snake.
     Food* food_;                                        // Pointer to instance of Food,
     Border* border_;                                    // Pointer to instance of Border.

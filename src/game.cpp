@@ -38,6 +38,7 @@ Game::~Game() {
     delete text_;
     SDL_DestroyWindow(mainWindow_);
     SDL_DestroyRenderer(renderer_);
+    SDL_FreeSurface(icon_);
     TTF_Quit();
     SDL_Quit();
 }
@@ -57,6 +58,8 @@ void Game::init() {
     renderer_ = SDL_CreateRenderer(mainWindow_, -1, SDL_RENDERER_ACCELERATED);
     if (renderer_ == nullptr) globals::SDLError();
     SDL_SetRenderDrawColor(renderer_, 0, 0, 0, 255);
+    icon_ = SDL_LoadBMP("res/icon.bmp");
+    SDL_SetWindowIcon(mainWindow_, icon_);
 }
 
 
