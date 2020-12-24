@@ -53,7 +53,7 @@ void Game::init() {
     if (SDL_Init(SDL_INIT_VIDEO) < 0) globals::SDLError();
     if (TTF_Init() < 0) globals::SDLError();
     if (!SDL_SetHint(SDL_HINT_RENDER_SCALE_QUALITY, "1")) globals::SDLError();
-    mainWindow_ = SDL_CreateWindow("Snake Game", 0, 0, screenWidth_, screenHeight_, SDL_WINDOW_SHOWN);
+    mainWindow_ = SDL_CreateWindow("Snake Game", SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, screenWidth_, screenHeight_, SDL_WINDOW_SHOWN);
     if (mainWindow_ == nullptr) globals::SDLError();
     renderer_ = SDL_CreateRenderer(mainWindow_, -1, SDL_RENDERER_ACCELERATED);
     if (renderer_ == nullptr) globals::SDLError();
