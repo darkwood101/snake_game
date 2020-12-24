@@ -40,7 +40,7 @@ void Text::update(const char* message) {
     }
 
     TTF_SizeText(font_, message, &renderRect_.w, &renderRect_.h);
-    SDL_Surface* surface = TTF_RenderText_Solid(font_, message, textColor_);
+    SDL_Surface* surface = TTF_RenderText_Blended(font_, message, textColor_);
     texture_ = SDL_CreateTextureFromSurface(renderer_, surface);
     SDL_FreeSurface(surface);
 }
