@@ -1,6 +1,6 @@
 # Snake Game
 
-This is a remake of the classic snake game, written in C++ using the SDL library and the minimalistic geometric figures as graphics.
+This is a remake of the classic snake game, written in C++ using the SDL library and with minimalistic geometric figures as graphics.
 
 ## Build ##
 
@@ -17,7 +17,7 @@ The game requires the `SDL 2` library to compile, as well as `SDL_ttf 2`. For De
 The default compiler is `GCC`. The minimal required version is `C++11`. You can also use `clang`, in which case you need to replace the first line in `makefile`, which is currently `CC=g++`, with `CC=clang++`.
 If your compiler doesn't support `C++11`, you will need to upgrade. If your compiler supports `C++11`, but not by default, you can edit the `CFLAGS` line in `makefile` by adding a `std=c++11` flag.
 
-Currently, the game has only been tested to work on Linux. It should also work on other platforms, but the current `makefile` is Linux-specific.
+Currently, the game has only been tested to work on Linux. `SDL 2` is cross-platform, so the game should also be able to work on other platforms with some tweaks. There will be more information on this in a future update.
 
 ## Demo ##
 
@@ -26,3 +26,9 @@ Check the screenshots in the `demo` folder!
 ## Font ##
 
 The font used in the game, Roboto Mono, was designed by Christian Robertson and downloaded from here: https://fonts.google.com/specimen/Roboto+Mono. The copy of the license (`LICENSE.txt`) is included in the `res/font` folder.
+
+## Older versions ##
+
+Versions prior to v2.0 were console-based and used the `ncurses` library. These versions are still available for download as releases. The latest such release is [v1.2].
+
+[v1.2]: https://github.com/darkwood101/snake_game/releases/tag/v1.2
