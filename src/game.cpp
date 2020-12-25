@@ -76,7 +76,7 @@ int Game::startScreen() {
     sprintf(message_, "Use W, A, S, D to move the snake.");
     text_->update(message_);
     text_->render(20, globals::mapHeight + 10);
-    sprintf(message_, "Press SPACE to start, q to quit.");
+    sprintf(message_, "Press SPACE to start, Q to quit.");
     text_->update(message_);
     text_->render(20, globals::mapHeight + 50);
     snake_->render();
@@ -192,7 +192,7 @@ void Game::gameOverScreen() {
     sprintf(message_, "Game over. Your score was %lu.", score_);
     text_->update(message_);
     text_->render(20, globals::mapHeight + 10);
-    sprintf(message_, "Press q to quit.");
+    sprintf(message_, "Press Q to quit.");
     text_->update(message_);
     text_->render(20, globals::mapHeight + 50);
     border_->render();
