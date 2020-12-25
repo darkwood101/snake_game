@@ -4,6 +4,8 @@ This is a remake of the classic snake game, written in C++ using the SDL library
 
 Once the program is run, the initial state of the game is displayed. The user can press `SPACE` to start the game. At any point, the user can press `Q` or close the window to exit the game. The snake is controlled by pressing the buttons `W`, `A`, `S`, and `D` on the keyboard, which correspond to directions up, left, down, and right, respectively. The goal is to eat as much food as possible. The game ends when the snake hits a wall or itself.
 
+The speed of the snake increases after every 10 points, which increases the difficulty. The maximum speed is achieved after 50 points.
+
 The source code is located in the `src` folder. The resources used by the game (textures and the font) are located in the `res` folder.
 
 
