@@ -1,11 +1,11 @@
 CC=g++
 
 TARGET=snake_game
-LIBS=-lncurses
+LIBS=-lSDL2 -lSDL2_ttf
 
 SRC_DIR=src
 SRC=$(wildcard $(SRC_DIR)/*.cpp)
-CFLAGS= -g -W -O2 -Wall -Wshadow
+CFLAGS= -O2 -Wextra -Wall -Wshadow
 
 OBJ_DIR=obj
 OBJ=$(SRC:$(SRC_DIR)/%.cpp=$(OBJ_DIR)/%.o)

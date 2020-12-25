@@ -1,32 +1,44 @@
 #include "food.hpp"
-#include "game.hpp"
+#include "globals.hpp"
 
-#include <time.h>
-#include <cstdlib>
-#include <ncurses.h>
+
+// Food::Food(renderer)
+//      Initializes the food texture and loads the .bmp file for the texture.
+//      The path to the file is hardcoded.
+//      Initializes the distributions. The distributions are initialized in such a way to ensure
+//      that the food will not be generated past the borders of the screen.
+
+Food::Food(SDL_Renderer* renderer) : food_(renderer, globals::unitLength, globals::unitLength), generator_(randomDevice_()),
+                                     distrX_(1, (globals::mapWidth / globals::unitLength) - 2),
+                                     distrY_(1, (globals::mapHeight / globals::unitLength) - 2) {
+    food_.loadFromFile("res/food.bmp");
+}
 
 
 // Food::generate()
 //      Generate a new random position for the food.
-//      This function doesn't check whether the position is OK.
-//      The check is performed by Game::move_snake().
+//      Repeats generation until the food position doesn't collide with the position
+//      of the snake. This is why it takes a pointer to snake, in order to have access to snake's positions.
 
-void Food::generate() {
-    static bool first_generation = true;    // We want to set the generator seed only once.
-    if (first_generation) {
-        srand(time(NULL));
-        first_generation = false;
+void Food::generate(Snake* snake) {
+    do {
+        foodPos_ = std::make_pair(distrY_(generator_) * globals::unitLength, distrX_(generator_) * globals::unitLength);
     }
-
-    unsigned food_y = 1 + (rand() % (Game::map_height - 1));
-    unsigned food_x = 1 + (rand() % (Game::map_width - 1));
-    food_pos_ = std::make_pair(food_y, food_x);
+    while ((snake->isInSnake(foodPos_)) || (foodPos_ == snake->getHead()));
 }
 
 
-// Food::get_food_pos()
+// Food::getFoodPos()
 //      Returns the current position of the food.
 
-std::pair<unsigned, unsigned> Food::get_food_pos() {
-    return food_pos_;
+std::pair<unsigned, unsigned> Food::getFoodPos() {
+    return foodPos_;
+}
+
+
+// Food::render()
+//      Renders the food on the screen.
+
+void Food::render() {
+    food_.render(foodPos_);
 }

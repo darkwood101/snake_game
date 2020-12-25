@@ -1,228 +1,292 @@
 #include "game.hpp"
-#include "os_dependent.hpp"
+#include "globals.hpp"
 
-#include <utility>
-#include <ncurses.h>
-#include <cstring>
-#include <time.h>
-#include <cstdlib>
-#include <unistd.h>
+#include <thread>
 
 
-// Game::Game(snake, food)
-//      Initializes the instance of Game with pointers to Snake and Food objects.
-//      Initializes the screen, and draws the initial state of the world.
+// Game::Game()
+//      Initializes the instance of Game with pointers to Snake, Food, Border, and Text.
+//      Initializes the SDL-related objects.
+//      Initializes other members of the Game class.
 
-Game::Game(Snake* snake, Food* food) {
-    snake_ = snake;
-    food_ = food;
-    score = 0;
-    delay = init_delay;
-    os::initialize_screen();  // Initialize the screen.
-    generate_food();          // Initial food generation.
-    draw_borders();           // Draw the borders of the map.
-    draw_snake();             // Draw the initial position of the snake.
-    draw_food();              // Draw the initial position of the food.
-    print_instructions();     // Print the instructions for the user.
-    print_score();            // Print the score.
-    os::refresh_screen();     // Refresh the screen.
+Game::Game() {
+    screenWidth_ = globals::mapWidth;
+    screenHeight_ = globals::mapHeight + 100;
+    mainWindow_ = nullptr;
+    renderer_ = nullptr;
+    delay_ = std::chrono::microseconds(110000);
+    minDelay_ = std::chrono::microseconds(60000);
+    delayDecrement_ = std::chrono::microseconds(10000);
+    score_ = 0;
+    grow_ = false;
+    init();
+    snake_ = new Snake(renderer_);
+    food_ = new Food(renderer_);
+    border_ = new Border(renderer_);
+    text_ = new Text(renderer_);
+}
+
+
+// Game::~Game()
+//      Destructor for the Game class. Deletes dynamically allocated objects.
+//      Cleans up SDL-related objects.
+
+Game::~Game() {
+    delete snake_;
+    delete food_;
+    delete border_;
+    delete text_;
+    SDL_DestroyWindow(mainWindow_);
+    SDL_DestroyRenderer(renderer_);
+    SDL_FreeSurface(icon_);
+    TTF_Quit();
+    SDL_Quit();
+}
+
+
+// Game::init()
+//      Initializes SDL and TTF. After each step, it is checked whether SDL returned an error.
+//      If so, SDLError() is called, which prints the error to stderr and exits.
+//      Sets the default rendering color to black.
+
+void Game::init() {
+    if (SDL_Init(SDL_INIT_VIDEO) < 0) globals::SDLError();
+    if (TTF_Init() < 0) globals::SDLError();
+    if (!SDL_SetHint(SDL_HINT_RENDER_SCALE_QUALITY, "1")) globals::SDLError();
+    mainWindow_ = SDL_CreateWindow("Snake Game", SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, screenWidth_, screenHeight_, SDL_WINDOW_SHOWN);
+    if (mainWindow_ == nullptr) globals::SDLError();
+    renderer_ = SDL_CreateRenderer(mainWindow_, -1, SDL_RENDERER_ACCELERATED);
+    if (renderer_ == nullptr) globals::SDLError();
+    SDL_SetRenderDrawColor(renderer_, 0, 0, 0, 255);
+    icon_ = SDL_LoadBMP("res/icon.bmp");
+    if (icon_ == nullptr) globals::SDLError();
+    SDL_SetWindowIcon(mainWindow_, icon_);
+}
+
+
+// Game::startScreen()
+//      Generates the food.
+//      Renders all objects.
+//      Displays the appropriate messages for the starting screen.
+//      Waits for the user's input.
+
+int Game::startScreen() {
+    food_->generate(snake_);
+    SDL_RenderClear(renderer_);
+    sprintf(message_, "Use W, A, S, D to move the snake.");
+    text_->update(message_);
+    text_->render(20, globals::mapHeight + 10);
+    sprintf(message_, "Press SPACE to start, Q to quit.");
+    text_->update(message_);
+    text_->render(20, globals::mapHeight + 50);
+    snake_->render();
+    food_->render();
+    border_->render();
+    SDL_RenderPresent(renderer_);
+
+    while (SDL_WaitEvent(&event_)) {
+        if (event_.type == SDL_KEYDOWN) {
+            SDL_Keycode key = event_.key.keysym.sym;
+            switch (key) {
+                case SDLK_SPACE:
+                    return globals::gameStart;
+
+                case SDLK_q:
+                    return globals::userExit;
+
+                default:
+                    break;
+            }
+        }
+
+        else if (event_.type == SDL_QUIT) {
+            return globals::userExit;
+        }
+    }
+
+    return globals::gameStart;
 }
 
 
 // Game::run()
 //      Runs the game.
-//      This function is called from main.
-//      NOTE: to reduce the amount of unnecessary refreshes, only Game::run (except the constructor) should call
-//      os::refresh_screen()!!!
+//      This function controls the state of the game.
+//      Returns globals::userExit if the user pressed q or closed the window,
+//      and returns globals::playerDead if the player died.
 
-void Game::run() {
-    // Loop moving the snake. If <0 is returned, game over.
-    // There is a microsleep after each iteration.
+int Game::run() {
+    sprintf(message_, "Score: %lu\n", score_);
+    text_->update(message_); 
     while (true) {
-        process_input();
-        if (move_snake() < 0) {
-            char message[100];
-            sprintf(message, "Game over. Your score is %d. \n \nPress q to exit...", score);
-            os::draw_string(std::make_pair(map_height, 0), message);
-            os::clear_line(std::make_pair(map_height + 3, 0));
-            os::refresh_screen();
-            os::block_getch();     // Make getch blocking again.
-            // Wait until user presses q.
-            while (true) {
-                char ch = getch();
-                if (ch == 'q') {
+        // Begin measuring the time for the frame.
+        beginTime_ = std::chrono::high_resolution_clock::now();
+        // Update the game state.
+        int gameStatus = update();
+        // If user exited or the player died, return to main.
+        if ((gameStatus == globals::userExit) || (gameStatus == globals::playerDead)) return gameStatus;
+        // Render everything,
+        render();
+        // Stop measuring the time for the frame.
+        endTime_ = std::chrono::high_resolution_clock::now();
+        // If the duration of the frame was less than the required delay, sleep to make up for the difference.
+        duration_ = std::chrono::duration_cast<std::chrono::microseconds>(endTime_ - beginTime_);
+        if (duration_ < delay_) {
+            std::this_thread::sleep_for(delay_ - duration_);
+        }
+    }
+}
+
+
+// Game::render()
+//      Draws everything on the screen.
+
+void Game::render() {
+    SDL_RenderClear(renderer_);
+    snake_->render();
+    food_->render();
+    border_->render();
+    text_->render(20, globals::mapHeight + 20);
+    SDL_RenderPresent(renderer_);
+}
+
+
+// Game::update()
+//      Controls the dynamics of the game.
+//      Processes user's input and checks whether the user exited.
+//      Moves the snake.
+//      Checks whether the snake is dead.
+//      Checks whether the snake is supposed to grow. If not,
+//      it erases the snake's tail (this equivalent to moving the snake's tail).
+//      Checks whether the snake hit the food. If yes, updates the score and the message.
+
+int Game::update() {
+    if (processInput() == globals::userExit) return globals::userExit;
+    
+    snake_->advance();
+    if (isDead()) {
+        return globals::playerDead;
+    }
+    if (!grow_) {
+        snake_->clearTail();
+    }
+    grow_ = ateFood();
+    if (grow_) {
+        ++score_;
+        sprintf(message_, "Score: %lu\n", score_);
+        text_->update(message_);
+        food_->generate(snake_);
+        updateDelay();
+    }
+
+    return globals::gameContinue;
+}
+
+
+// Game::gameOverScreen()
+//      Erases the snake and leaves just the black board with the borders/
+//      Prints the game over messages.
+//      Waits until the user presses q.
+
+void Game::gameOverScreen() {
+    SDL_RenderClear(renderer_);
+    sprintf(message_, "Game over. Your score was %lu.", score_);
+    text_->update(message_);
+    text_->render(20, globals::mapHeight + 10);
+    sprintf(message_, "Press Q to quit.");
+    text_->update(message_);
+    text_->render(20, globals::mapHeight + 50);
+    border_->render();
+    SDL_RenderPresent(renderer_);
+    while (SDL_WaitEvent(&event_)) {
+        if (event_.type == SDL_KEYDOWN) {
+            SDL_Keycode key = event_.key.keysym.sym;
+            switch (key) {
+                case SDLK_q:
+                    return;
+
+                default:
                     break;
-                }
             }
-            endwin();
-            return;
-        }
-        print_score();
-        os::refresh_screen();
-        os::sleep(delay);
-    }
-}
-
-
-// Game::draw_world()
-//      Draws the borders of the map.
-
-void Game::draw_borders() {
-    for (unsigned y = 0; y < map_height; ++y) {
-        for (unsigned x = 0; x < map_width; x += map_width - 1) {
-            os::draw_char(std::make_pair(y, x), border_char_);
-        }
-    }
-
-    for (unsigned y = 0; y < map_height; y += map_height - 1) {
-        for (unsigned x = 1; x < map_width - 1; ++x) {
-            os::draw_char(std::make_pair(y, x), border_char_);
         }
     }
 }
 
 
-// Game::draw_food()
-//      Draws the food.
-
-void Game::draw_food() {
-    os::draw_char(food_->get_food_pos(), food_char_);
-}
-
-
-// Game::draw_snake()
-//      Draw the snake.
-
-void Game::draw_snake() {
-    std::vector<std::pair<unsigned, unsigned>> snake_pos = snake_->get_snake_pos();
-    for (size_t i = 0; i != snake_pos.size() - 1; ++i) {
-        os::draw_char(snake_pos[i], snake_char_);
-    }
-    os::draw_char(snake_pos[snake_pos.size() - 1], snake_head_);
-}
-
-
-// Game::generate_food()
-//      Generates food on a new position. The new position must be blank. The function
-//      Food::get_food_pos() is called in a loop until the appropriate food position is found.
-
-void Game::generate_food() {
-    do {
-        food_->generate();  
-    }
-    while (!(cell_is_blank(food_->get_food_pos())));
-}
-
-
-// Game::cell_is_blank(coords)
+// Game::isBlank(coords)
 //      Returns true if the cell at coordinates `coords` is blank, false otherwise.
 
-bool Game::cell_is_blank(std::pair<unsigned, unsigned> coords) {
+bool Game::isBlank(std::pair<unsigned, unsigned> coords) {
     unsigned y = coords.first;
     unsigned x = coords.second;
-    return !((x == 0) || (x == map_width - 1) || (y == 0) || (y == map_height - 1) || (snake_->is_in_snake(coords)));
+    return !((x == 0) || (x == globals::mapWidth - globals::unitLength) || (y == 0) || (y == globals::mapHeight - globals::unitLength) || (snake_->isInSnake(coords)));
 }
 
 
-// Game::process_input()
+// Game::processInput()
 //      Processes any input obtained from the user. It's called after each microsleep (millisleep hehe)
 //      and it harvests all the input that was sent by the user during the sleep. All those requests for new directions
-//      are then added to the deque Snake::new_directions_ (with some exceptions), which is handled by Snake::set_direction.
+//      are then added to the deque Snake::newDirections_ (with some exceptions), which is handled by Snake::setDirection.
+//      If q is pressed or the windows is closed, returns globals::userExit.
 
-void Game::process_input() {
-    
-    while (true) {
-        char ch = getch();
-        if (ch == ERR) {
-            return;
+int Game::processInput() {
+    while (SDL_PollEvent(&event_)) {
+        if (event_.type == SDL_KEYDOWN) {
+            SDL_Keycode key = event_.key.keysym.sym;
+            switch(key) {
+                case SDLK_w: {
+                    snake_->setDirection(snake_->up);
+                    break;
+                }
+                case SDLK_s: {
+                    snake_->setDirection(snake_->down);
+                    break;
+                }
+                case SDLK_a: {
+                    snake_->setDirection(snake_->left);
+                    break;
+                }
+                case SDLK_d: {
+                    snake_->setDirection(snake_->right);
+                    break;
+                }
+                case SDLK_q: {
+                    return globals::userExit;
+                }
+            }
         }
-        switch(ch) {
-            case 'w': {
-                snake_->set_direction(snake_->up);
-                break;
-            }
-            case 's': {
-                snake_->set_direction(snake_->down);
-                break;
-            }
-            case 'a': {
-                snake_->set_direction(snake_->left);
-                break;
-            }
-            case 'd': {
-                snake_->set_direction(snake_->right);
-            }
+        else if (event_.type == SDL_QUIT) {
+            return globals::userExit;
         }
     }
+
+    return globals::gameContinue;
 }
 
 
-// Game::move_snake()
-//      Controls a solid portion of the game dynamic.
-//      Advances the snake's head.
-//      Checks whether the snake hit the food.
-//      Checks whether the snake is dead. Returns -1 if the snake is dead, 0 otherwise.
-//      If the snake didn't hit food, it clears the tail of the snake.
-//      If the snake did hit food. it updates score and appropriately reduces the microsleep length.
-
-int Game::move_snake() {
-    snake_->advance();
-    bool grow = ate_food();
-    if (is_dead(grow)) {
-        return -1;
-    }
-    if (!grow) {
-        snake_->clear_tail(blank_char_);
-    }
-    else {
-        ++score;
-        if ((score % 10 == 0) && (delay > min_delay)) {
-            delay -= delay_decrement;
-        }
-        generate_food();
-        draw_food();
-    }
-    draw_snake();
-    return 0;
-}
-
-
-// Game::is_dead()
+// Game::isDead()
 //      Returns true if the snake hit a wall or itself.
 //      This is equivalent to checking whether the snake head is in a blank cell or not.
-//      One exception is the snake hitting its own tail. In that case, if the snake didn't eat any food
-//      (i.e. grow is false), the snake shouldn't die.
 
-bool Game::is_dead(bool grow) {
-    if ((!grow) && (snake_->get_head() == snake_->get_tail())) {
+bool Game::isDead() {
+    if ((!grow_) && (snake_->getHead() == snake_->getTail())) {
         return false;
     }
-    return !(cell_is_blank(snake_->get_head()));
+    return !(isBlank(snake_->getHead()));
 }
 
 
-// Game::ate_food()
+// Game::ateFood()
 //      Returns true if the snake hit food.
 //      This is equivalent to checking if snake head coordinates are equal to food coordinates.
 
-bool Game::ate_food() {
-    return snake_->get_head() == food_->get_food_pos();
+bool Game::ateFood() {
+    return snake_->getHead() == food_->getFoodPos();
 }
 
 
-// Game::print_instructions()
-//      Prints movement instructions at the beginning of the game.
+// Game::updateDelay()
+//      Updates the delay between frames. The update happens only if the score is a multiple of 10.
 
-void Game::print_instructions() {
-    os::draw_string(std::make_pair(map_height, 0), "Use W, A, S, D to move.");
-}
-
-
-// Game::print_score()
-//      Prints the player score.
-
-void Game::print_score() {
-    char message[100];
-    sprintf(message, "Score: %d\n", score);
-    os::draw_string(std::make_pair(map_height + 2, 0), message);
+void Game::updateDelay() {
+    if ((score_ % 10 == 0) && (delay_ > minDelay_)) delay_ -= delayDecrement_;
 }
