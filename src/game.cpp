@@ -208,6 +208,9 @@ void Game::gameOverScreen() {
                     break;
             }
         }
+        else if (event_.type == SDL_QUIT) {
+            return;
+        }
     }
 }
 
